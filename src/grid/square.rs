@@ -1,6 +1,5 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-
-pub const LENGTH: i32 = 4;
+use crate::grid;
 
 #[derive(Component)]
 struct Square;
@@ -12,7 +11,7 @@ pub fn spawn(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
 ) {
-    let length: f32 = LENGTH as f32;
+    let length: f32 = grid::SQUARE_LENGTH as f32;
 
     commands.spawn((
         MaterialMesh2dBundle {

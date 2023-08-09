@@ -1,10 +1,12 @@
 use bevy::prelude::*;
 pub mod square;
+use crate::grid;
 
-pub const SIZE: Dimension = Dimension{x:100, y:100};
+pub const SQUARE_LENGTH: i32 = 16;
+pub const SIZE: Dimension = Dimension{x:50, y:50};
 pub const ACTUAL_SIZE: Dimension = Dimension {
-    x: SIZE.x * square::LENGTH,
-    y: SIZE.y * square::LENGTH,
+    x: SIZE.x * SQUARE_LENGTH,
+    y: SIZE.y * SQUARE_LENGTH,
 };
 
 pub struct GridPlugin;
@@ -53,7 +55,7 @@ fn build_grid(
                 blue: divide_ints(i+j,2*dim_y),
                 alpha: 1. 
             };
-            let pos = Vec3::new((i*square::LENGTH) as f32,(j*square::LENGTH) as f32, 0.);
+            let pos = Vec3::new((i*grid::SQUARE_LENGTH) as f32,(j*grid::SQUARE_LENGTH) as f32, 0.);
         square::spawn(pos, color, commands, meshes, materials);
         }
     }
