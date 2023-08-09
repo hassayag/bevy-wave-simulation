@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, ecs::system::SystemParam};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 pub const LENGTH: i32 = 4;
 

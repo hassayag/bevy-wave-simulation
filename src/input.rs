@@ -10,8 +10,8 @@ impl Plugin for InputPlugin {
 }
 
 fn mouse_input(    
-    mut buttons: Res<Input<MouseButton>>,
-    mut q_windows: Query<&Window, With<PrimaryWindow>>,
+    buttons: Res<Input<MouseButton>>,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
     camera_q: Query<(&Camera, &GlobalTransform), With<camera::MainCamera>>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,

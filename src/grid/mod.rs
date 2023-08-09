@@ -32,9 +32,9 @@ fn init(
 
 fn build_grid(
     dimensions: (i32, i32), offset: (i32, i32),
-    mut commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>) {
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>) {
     
     let (dim_x, dim_y) = dimensions;
     let (offset_x, offset_y) = offset;
