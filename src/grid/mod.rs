@@ -1,30 +1,40 @@
 use bevy::prelude::*;
-mod square;
-use square::*;
+pub mod square;
+
+pub const SIZE: Dimension = Dimension{x:100, y:100};
+pub const ACTUAL_SIZE: Dimension = Dimension {
+    x: SIZE.x * square::LENGTH,
+    y: SIZE.y * square::LENGTH,
+};
 
 pub struct GridPlugin;
 
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(Startup, startup);
-            // .add_systems(Update, update);
+            .add_systems(Startup, init);
     }
 }
 
-fn startup(    
+pub struct Dimension {
+    pub x: i32,
+    pub y: i32
+}
+
+
+fn init(    
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    build_grid((50, 50), (0, 0), &mut commands, &mut meshes, &mut materials);
+    build_grid((SIZE.x, SIZE.y), (0, 0), &mut commands, &mut meshes, &mut materials);
 }
 
 fn build_grid(
     dimensions: (i32, i32), offset: (i32, i32),
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<ColorMaterial>>) {
+    mut commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>) {
     
     let (dim_x, dim_y) = dimensions;
     let (offset_x, offset_y) = offset;
@@ -43,8 +53,8 @@ fn build_grid(
                 blue: divide_ints(i+j,2*dim_y),
                 alpha: 1. 
             };
-            // info!("{color:?}");
-            square::spawn_square((i*SQUARE_LENGTH,j*SQUARE_LENGTH), color, commands, meshes, materials);
+            let pos = Vec3::new((i*square::LENGTH) as f32,(j*square::LENGTH) as f32, 0.);
+        square::spawn(pos, color, commands, meshes, materials);
         }
     }
 }
