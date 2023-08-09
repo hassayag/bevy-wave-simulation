@@ -4,8 +4,8 @@ use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use crate::grid;
 
 const RADIUS: f32 = 0.8;
-const SPEED: f32 = 120.;
-const NUM_OF_PARTICLES: usize = 6000;
+const SPEED: f32 = 80.;
+const NUM_OF_PARTICLES: usize = 3000;
 const LIFE_SECS: f32 = 15.;
 
 pub struct ParticlePlugin;
@@ -55,11 +55,12 @@ fn spawn(
 
 
 fn update(
-    mut query: Query<(&mut Particle, &mut Transform, Entity), With<Particle>>,
+    mut query: Query<(&mut Particle, &mut Transform, &mut Handle<ColorMaterial>, Entity), With<Particle>>,
     mut commands: Commands,
     time: Res<Time>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    for (mut particle, mut transform, entity) in query.iter_mut() {
+    for (mut particle, mut transform, mut material, entity) in query.iter_mut() {
         let (x_collision, y_collision) = check_boundary(&transform.translation);
 
         let mut move_this_frame = Vec2::new(
@@ -94,9 +95,17 @@ fn update(
         transform.translation.x += move_this_frame.x;
         transform.translation.y += move_this_frame.y;
         
+        // increase opacity of particle each loop
+        let new_material = materials.add(ColorMaterial::from(Color::Rgba { 
+                red: 1., green: 1., blue: 1., 
+                alpha: particle.time_remaining * 1. / LIFE_SECS 
+            }));
+
+        // Update the material handle
+        *material = new_material.clone();
 
         particle.time_remaining -= time.delta_seconds();
-
+        
         if particle.time_remaining < 0. {
             commands.entity(entity).despawn();
         }

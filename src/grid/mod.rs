@@ -3,7 +3,7 @@ pub mod square;
 use crate::grid;
 
 pub const SQUARE_LENGTH: i32 = 16;
-pub const SIZE: Dimension = Dimension{x:50, y:50};
+pub const SIZE: Dimension = Dimension{x:30, y:30};
 pub const ACTUAL_SIZE: Dimension = Dimension {
     x: SIZE.x * SQUARE_LENGTH,
     y: SIZE.y * SQUARE_LENGTH,
