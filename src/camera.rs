@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::core_pipeline::clear_color::ClearColorConfig;
 
 pub struct CameraPlugin;
 
@@ -14,7 +15,12 @@ impl Plugin for CameraPlugin {
 pub struct MainCamera;
 
 fn init(mut commands: Commands) {
-    commands.spawn((Camera2dBundle::default(), MainCamera));
+    commands.spawn((Camera2dBundle {
+        camera_2d: Camera2d {
+            clear_color: ClearColorConfig::Custom(Color::rgb(0.06, 0.06, 0.06)),
+        },
+        ..Default::default()
+    }, MainCamera));
 }
 
 fn keyboard_input(

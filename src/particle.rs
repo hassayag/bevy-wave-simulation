@@ -3,11 +3,12 @@ use std::f32::consts::TAU;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use crate::grid;
 
-const RADIUS: f32 = 0.8;
+const RADIUS: f32 = 2.5;
 const SPEED: f32 = 80.;
-const NUM_OF_PARTICLES: usize = 3000;
-const LIFE_SECS: f32 = 15.;
-const COLLISSION_LIFE_LOSS_PERC: f32 = 0.3;
+const NUM_OF_PARTICLES: usize = 1500;
+const LIFE_SECS: f32 = 40.;
+const COLLISSION_LIFE_LOSS_PERC: f32 = 0.5;
+const COLLISSION_SPEED_LOSS_PERC: f32 = 0.0;
 
 pub struct ParticlePlugin;
 
@@ -79,8 +80,9 @@ fn update(
             // subtract 2 x waste to compensate the change in direction at the boundary
             move_this_frame.x -= 2.*wasted_x;
 
-            particle.velocity.x = -1. * particle.velocity.x;
-            particle.time_remaining = particle.time_remaining * COLLISSION_LIFE_LOSS_PERC;
+            // reverse and reduce velocity
+            particle.velocity.x = -1. * (1. - COLLISSION_SPEED_LOSS_PERC) * particle.velocity.x;
+            particle.time_remaining = particle.time_remaining * (1. - COLLISSION_LIFE_LOSS_PERC);
         }
         if y_collision != 0 && particle.velocity.y * y_collision as f32 > 0. {
             let diff_y = transform.translation.y - ((y_collision + 1)/ 2 * grid::ACTUAL_SIZE.y) as f32; 
@@ -91,8 +93,9 @@ fn update(
             // subtract 2 x waste to compensate the change in direction at the boundary
             move_this_frame.y -= 2.*wasted_y;
             
-            particle.velocity.y = -1. * particle.velocity.y;
-            particle.time_remaining = particle.time_remaining * COLLISSION_LIFE_LOSS_PERC;
+            // reverse and reduce velocity
+            particle.velocity.y = -1. * (1. - COLLISSION_SPEED_LOSS_PERC) * particle.velocity.y;
+            particle.time_remaining = particle.time_remaining * (1. - COLLISSION_LIFE_LOSS_PERC);
         }
 
         transform.translation.x += move_this_frame.x;
