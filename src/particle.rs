@@ -7,6 +7,7 @@ const RADIUS: f32 = 0.8;
 const SPEED: f32 = 80.;
 const NUM_OF_PARTICLES: usize = 3000;
 const LIFE_SECS: f32 = 15.;
+const COLLISSION_LIFE_LOSS_PERC: f32 = 0.3;
 
 pub struct ParticlePlugin;
 
@@ -79,6 +80,7 @@ fn update(
             move_this_frame.x -= 2.*wasted_x;
 
             particle.velocity.x = -1. * particle.velocity.x;
+            particle.time_remaining = particle.time_remaining * COLLISSION_LIFE_LOSS_PERC;
         }
         if y_collision != 0 && particle.velocity.y * y_collision as f32 > 0. {
             let diff_y = transform.translation.y - ((y_collision + 1)/ 2 * grid::ACTUAL_SIZE.y) as f32; 
@@ -90,15 +92,16 @@ fn update(
             move_this_frame.y -= 2.*wasted_y;
             
             particle.velocity.y = -1. * particle.velocity.y;
+            particle.time_remaining = particle.time_remaining * COLLISSION_LIFE_LOSS_PERC;
         }
 
         transform.translation.x += move_this_frame.x;
         transform.translation.y += move_this_frame.y;
         
-        // increase opacity of particle each loop
+        // reduce opacity of particle each loop
         let new_material = materials.add(ColorMaterial::from(Color::Rgba { 
                 red: 1., green: 1., blue: 1., 
-                alpha: particle.time_remaining * 1. / LIFE_SECS 
+                alpha: particle.time_remaining / LIFE_SECS 
             }));
 
         // Update the material handle
