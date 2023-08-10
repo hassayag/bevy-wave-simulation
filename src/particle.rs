@@ -1,7 +1,7 @@
 use std::f32::consts::TAU;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-use crate::grid;
+use crate::map;
 
 const RADIUS: f32 = 2.5;
 const SPEED: f32 = 80.;
@@ -72,7 +72,7 @@ fn update(
 
         // if we have collided AND the velocity towards the boundary, reverse the velocity
         if x_collision != 0 && particle.velocity.x * x_collision as f32 > 0. {
-            let diff_x = transform.translation.x - ((x_collision + 1)/ 2 * grid::ACTUAL_SIZE.x) as f32; 
+            let diff_x = transform.translation.x - ((x_collision + 1)/ 2 * map::ACTUAL_SIZE.x) as f32; 
 
             // the amount a particle would move through the boundary during the collision frame
             let wasted_x = diff_x - move_this_frame.x;
@@ -85,7 +85,7 @@ fn update(
             particle.time_remaining = particle.time_remaining * (1. - COLLISSION_LIFE_LOSS_PERC);
         }
         if y_collision != 0 && particle.velocity.y * y_collision as f32 > 0. {
-            let diff_y = transform.translation.y - ((y_collision + 1)/ 2 * grid::ACTUAL_SIZE.y) as f32; 
+            let diff_y = transform.translation.y - ((y_collision + 1)/ 2 * map::ACTUAL_SIZE.y) as f32; 
 
             // the amount a particle would move through the boundary during the collision frame
             let wasted_y = diff_y - move_this_frame.y;
@@ -125,14 +125,14 @@ fn check_boundary(pos: &Vec3) -> (i32, i32) {
     let mut x = 0;
     let mut y = 0;
 
-    if pos.x > grid::ACTUAL_SIZE.x as f32{
+    if pos.x > map::ACTUAL_SIZE.x as f32{
         x = 1;
     }
     else if pos.x < 0. {
         x = -1;
     }
 
-    if pos.y > grid::ACTUAL_SIZE.y as f32{
+    if pos.y > map::ACTUAL_SIZE.y as f32{
         y = 1;
     }
     else if pos.y < 0. {

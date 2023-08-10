@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-pub mod grid;
+pub mod map;
 mod camera;
 mod input;
 mod particle;
@@ -16,7 +16,7 @@ fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins, 
-            grid::GridPlugin, 
+            map::MapPlugin, 
             camera::CameraPlugin, 
             input::InputPlugin,
             particle::ParticlePlugin

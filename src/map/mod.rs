@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 pub mod square;
-use crate::grid;
+use crate::map;
 
 pub const SQUARE_LENGTH: i32 = 16*50;
 pub const SIZE: Dimension = Dimension{x:1, y:1};
@@ -9,9 +9,9 @@ pub const ACTUAL_SIZE: Dimension = Dimension {
     y: SIZE.y * SQUARE_LENGTH,
 };
 
-pub struct GridPlugin;
+pub struct MapPlugin;
 
-impl Plugin for GridPlugin {
+impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(Startup, init);
@@ -30,6 +30,7 @@ fn init(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     build_grid((SIZE.x, SIZE.y), (0, 0), &mut commands, &mut meshes, &mut materials);
+    build_obstacles(&mut commands, &mut meshes, &mut materials);
 }
 
 fn build_grid(
@@ -55,12 +56,25 @@ fn build_grid(
                 blue: divide_ints(i+j,2*dim_y),
                 alpha: 1. 
             };
-            let len = grid::SQUARE_LENGTH as f32;
+            let len = map::SQUARE_LENGTH as f32;
             let pos = Vec3::new(i as f32*len + len/2.,j as f32*len + len/2., 0.);
-        square::spawn(pos, color, commands, meshes, materials);
+
+            let length: f32 = map::SQUARE_LENGTH as f32;
+            square::spawn(pos, Vec3::new(length,length,length), color, commands, meshes, materials);
         }
     }
     
+}
+
+fn build_obstacles(    
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>
+) {
+    let len = map::SQUARE_LENGTH as f32;
+    let color = Color::ORANGE;
+
+    square::spawn(Vec3::new(len/2., len/2., 0.05), Vec3::new(len/4.,len/4.,len/4.), color, commands, meshes, materials);
 }
 
 fn divide_ints(a: i32, b: i32) -> f32 {
