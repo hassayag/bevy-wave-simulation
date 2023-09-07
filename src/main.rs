@@ -19,7 +19,7 @@ fn main() {
             map::MapPlugin, 
             camera::CameraPlugin, 
             input::InputPlugin,
-            particle::ParticlePlugin
+            particle::ParticlePlugin,  
         ))
         .run();
 }

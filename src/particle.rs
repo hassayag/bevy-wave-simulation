@@ -1,12 +1,12 @@
 use std::f32::consts::TAU;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-use crate::map;
+use crate::map::{self, Obstacle};
 
 const RADIUS: f32 = 2.5;
-const SPEED: f32 = 80.;
-const NUM_OF_PARTICLES: usize = 1500;
-const LIFE_SECS: f32 = 40.;
+const SPEED: f32 = 100.;
+const NUM_OF_PARTICLES: usize = 1;
+const LIFE_SECS: f32 = 20.;
 const COLLISSION_LIFE_LOSS_PERC: f32 = 0.5;
 const COLLISSION_SPEED_LOSS_PERC: f32 = 0.0;
 
@@ -57,49 +57,27 @@ fn spawn(
 
 
 fn update(
-    mut query: Query<(&mut Particle, &mut Transform, &mut Handle<ColorMaterial>, Entity), With<Particle>>,
+    mut query_particles: Query<(&mut Particle, &mut Transform, &mut Handle<ColorMaterial>, Entity), With<Particle>>,
+    mut query_obstacles: Query<&Obstacle>,
     mut commands: Commands,
     time: Res<Time>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    for (mut particle, mut transform, mut material, entity) in query.iter_mut() {
-        let (x_collision, y_collision) = check_boundary(&transform.translation);
+    let mut obstacles: Vec<&Obstacle> = Vec::new();
+    for obstacle in query_obstacles.iter() {
+        obstacles.push(obstacle);
+    }
 
-        let mut move_this_frame = Vec2::new(
-            particle.velocity.x * SPEED * time.delta_seconds(),
-            particle.velocity.y * SPEED * time.delta_seconds(),
-        );
-
-        // if we have collided AND the velocity towards the boundary, reverse the velocity
-        if x_collision != 0 && particle.velocity.x * x_collision as f32 > 0. {
-            let diff_x = transform.translation.x - ((x_collision + 1)/ 2 * map::ACTUAL_SIZE.x) as f32; 
-
-            // the amount a particle would move through the boundary during the collision frame
-            let wasted_x = diff_x - move_this_frame.x;
-
-            // subtract 2 x waste to compensate the change in direction at the boundary
-            move_this_frame.x -= 2.*wasted_x;
-
-            // reverse and reduce velocity
-            particle.velocity.x = -1. * (1. - COLLISSION_SPEED_LOSS_PERC) * particle.velocity.x;
-            particle.time_remaining = particle.time_remaining * (1. - COLLISSION_LIFE_LOSS_PERC);
-        }
-        if y_collision != 0 && particle.velocity.y * y_collision as f32 > 0. {
-            let diff_y = transform.translation.y - ((y_collision + 1)/ 2 * map::ACTUAL_SIZE.y) as f32; 
-
-            // the amount a particle would move through the boundary during the collision frame
-            let wasted_y = diff_y - move_this_frame.y;
-
-            // subtract 2 x waste to compensate the change in direction at the boundary
-            move_this_frame.y -= 2.*wasted_y;
+    for (
+        mut particle, 
+        mut transform, 
+        mut material, 
+        entity
+    ) in query_particles.iter_mut() {
             
-            // reverse and reduce velocity
-            particle.velocity.y = -1. * (1. - COLLISSION_SPEED_LOSS_PERC) * particle.velocity.y;
-            particle.time_remaining = particle.time_remaining * (1. - COLLISSION_LIFE_LOSS_PERC);
-        }
 
-        transform.translation.x += move_this_frame.x;
-        transform.translation.y += move_this_frame.y;
+        // transform.translation.x += move_this_frame.x;
+        // transform.translation.y += move_this_frame.y;
         
         // reduce opacity of particle each loop
         let new_material = materials.add(ColorMaterial::from(Color::Rgba { 
@@ -121,23 +99,5 @@ fn update(
 /**
  * For each X and Y axes, returns if +ve or -ve boundary was crossed
  */
-fn check_boundary(pos: &Vec3) -> (i32, i32) {
-    let mut x = 0;
-    let mut y = 0;
-
-    if pos.x > map::ACTUAL_SIZE.x as f32{
-        x = 1;
-    }
-    else if pos.x < 0. {
-        x = -1;
-    }
-
-    if pos.y > map::ACTUAL_SIZE.y as f32{
-        y = 1;
-    }
-    else if pos.y < 0. {
-        y = -1;
-    }
-
-    return (x, y);
+fn check_boundary(pos: &Vec3, obstacles: &Vec<&Obstacle>) {
 }
