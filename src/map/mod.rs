@@ -37,8 +37,8 @@ fn init(
 #[derive(Component)]
 pub struct Obstacle {
     // defines two ends of the 1-D obstacle
-    v1: Vec2,
-    v2: Vec2
+    pub v1: Vec2,
+    pub v2: Vec2
 }
 
 fn build_obstacles(    
@@ -55,7 +55,6 @@ fn build_obstacles(
 
     let v1 = Vec2::new(pos.x - size.y/2. * rot.sin(), pos.y - size.y/2. * rot.cos());
     let v2 = Vec2::new(pos.x + size.y/2. * rot.sin(), pos.y + size.y/2. * rot.cos());
-
 
     println!("V1 {} V2 {}", v1, v2);
 

@@ -1,6 +1,10 @@
 use std::f32::consts::TAU;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
+use geo_types::coord;
+use geo::{Line, Coord};
+use geo::line_intersection::{line_intersection, LineIntersection};
+
 use crate::map::{self, Obstacle};
 
 const RADIUS: f32 = 2.5;
@@ -20,8 +24,10 @@ impl Plugin for ParticlePlugin {
 
 #[derive(Component)]
 struct Particle {
+    pos: Vec2,
     velocity: Vec2,
     time_remaining: f32,
+    collision_checked: bool,
 }
 
 pub fn spawn_wave(
@@ -52,7 +58,7 @@ fn spawn(
             material: materials.add(ColorMaterial::from(color)),
             transform: Transform::from_translation(Vec3::new(pos.x, pos.y, pos.z)),
             ..default()
-    }, Particle{velocity, time_remaining: LIFE_SECS}));
+    }, Particle{ pos: Vec2::new(pos.x, pos.y), velocity, time_remaining: LIFE_SECS, collision_checked: false}));
 }
 
 
@@ -75,10 +81,26 @@ fn update(
         entity
     ) in query_particles.iter_mut() {
             
+        let move_this_frame = Vec2::new(
+            particle.velocity.x * SPEED * time.delta_seconds(),
+            particle.velocity.y * SPEED * time.delta_seconds(),
+        );
 
-        // transform.translation.x += move_this_frame.x;
-        // transform.translation.y += move_this_frame.y;
+        transform.translation.x += move_this_frame.x;
+        transform.translation.y += move_this_frame.y;
         
+        let mut collision_pos;
+        if !particle.collision_checked {
+            match predict_collision_pos(&particle, &obstacles[0]) {
+                Some(pos) => {
+                    collision_pos = pos;
+                    println!("Intersection at {collision_pos}");
+                }
+                None => {}
+            }
+        }
+        particle.collision_checked = true;
+
         // reduce opacity of particle each loop
         let new_material = materials.add(ColorMaterial::from(Color::Rgba { 
                 red: 1., green: 1., blue: 1., 
@@ -96,8 +118,44 @@ fn update(
     }
 }
 
-/**
- * For each X and Y axes, returns if +ve or -ve boundary was crossed
- */
-fn check_boundary(pos: &Vec3, obstacles: &Vec<&Obstacle>) {
+fn predict_collision_pos(particle: &Particle, obstacle: &Obstacle) -> Option<Vec2> {
+    let particle_trajectory = Line::new(
+        coord!{x:particle.pos.x, y:particle.pos.y},
+        coord!{x:particle.pos.x + 1000.*particle.velocity.x, y:particle.pos.y + 1000.*particle.velocity.y},
+    );
+
+    let obstacle_line = Line::new(
+        coord!{x:obstacle.v1.x, y:obstacle.v1.y},
+        coord!{x:obstacle.v2.x, y:obstacle.v2.y},
+    );
+
+    // let expected = LineIntersection::SinglePoint { intersection: coord! { x: 2.5, y: 2.5 }, is_proper: true };
+    let intersection_option = line_intersection(particle_trajectory, obstacle_line);
+
+    let mut single_point: Vec2 = Vec2::new(0., 0.);
+    let mut found_intersection = false;
+
+    match intersection_option {
+        None => println!("Failed"),
+        Some(intersection) => {
+            match intersection {
+                LineIntersection::SinglePoint { intersection, is_proper } => {
+                    single_point = Vec2::new(intersection.x, intersection.y);
+                    found_intersection = true;
+                }
+        
+                LineIntersection::Collinear { intersection } => {
+                    // Handle the Collinear variant here if needed
+                    println!("Collinear Intersection: {:?}", intersection);
+                }
+            }        
+        }
+    }
+
+    if found_intersection {
+        Some(single_point)
+    }
+    else {
+        None
+    }
 }
