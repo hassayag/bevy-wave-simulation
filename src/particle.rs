@@ -27,6 +27,7 @@ struct Particle {
     pos: Vec2,
     velocity: Vec2,
     time_remaining: f32,
+    time_to_collision: f32,
     collision_checked: bool,
 }
 
@@ -58,13 +59,13 @@ fn spawn(
             material: materials.add(ColorMaterial::from(color)),
             transform: Transform::from_translation(Vec3::new(pos.x, pos.y, pos.z)),
             ..default()
-    }, Particle{ pos: Vec2::new(pos.x, pos.y), velocity, time_remaining: LIFE_SECS, collision_checked: false}));
+    }, Particle{ pos: Vec2::new(pos.x, pos.y), velocity, time_remaining: LIFE_SECS, time_to_collision: 0., collision_checked: false}));
 }
 
 
 fn update(
     mut query_particles: Query<(&mut Particle, &mut Transform, &mut Handle<ColorMaterial>, Entity), With<Particle>>,
-    mut query_obstacles: Query<&Obstacle>,
+    query_obstacles: Query<&Obstacle>,
     mut commands: Commands,
     time: Res<Time>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -89,17 +90,25 @@ fn update(
         transform.translation.x += move_this_frame.x;
         transform.translation.y += move_this_frame.y;
         
-        let mut collision_pos;
+        let mut collision_pos = Vec2::new(0.,0.);
+        let mut found_collision = false;
+
         if !particle.collision_checked {
             match predict_collision_pos(&particle, &obstacles[0]) {
                 Some(pos) => {
                     collision_pos = pos;
+                    found_collision = true;
                     println!("Intersection at {collision_pos}");
                 }
                 None => {}
             }
         }
+
         particle.collision_checked = true;
+
+        if found_collision {
+            particle.time_to_collision = (collision_pos.x - particle.pos.x) / particle.velocity.x; 
+        }
 
         // reduce opacity of particle each loop
         let new_material = materials.add(ColorMaterial::from(Color::Rgba { 
