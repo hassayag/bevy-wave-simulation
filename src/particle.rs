@@ -9,7 +9,7 @@ use crate::map::{self, Obstacle};
 
 const RADIUS: f32 = 2.5;
 const SPEED: f32 = 100.;
-const NUM_OF_PARTICLES: usize = 5000;
+const NUM_OF_PARTICLES: usize = 3000;
 const LIFE_SECS: f32 = 10.;
 const COLLISSION_LIFE_LOSS_PERC: f32 = 0.5;
 const COLLISSION_SPEED_LOSS_PERC: f32 = 0.0;
@@ -28,6 +28,7 @@ struct Particle {
     velocity: Vec2,
     time_remaining: f32,
     time_to_collision: f32,
+    collision_pos: Vec2,
     rebound_dir: Vec2,
     collision_checked: bool,
 }
@@ -65,6 +66,7 @@ fn spawn(
         velocity, 
         time_remaining: LIFE_SECS, 
         time_to_collision: 0., 
+        collision_pos: Vec2::ZERO,
         rebound_dir: Vec2::ZERO,
         collision_checked: false
     }));
@@ -100,6 +102,8 @@ fn update(
 
                 if found_collision  {
                     let time_to_collision = ((collision_pos.x - particle.pos.x) / (SPEED * particle.velocity.x)).abs();
+                    
+                    // find minimum time_to_collision
                     if time_to_collision < particle.time_to_collision || particle.time_to_collision == 0. {
                         particle.time_to_collision = time_to_collision;
 
@@ -109,6 +113,7 @@ fn update(
                         }
 
                         particle.rebound_dir = normal_modifier * obstacle.normal;
+                        particle.collision_pos = collision_pos;
                     }
                 }
             }
@@ -121,9 +126,20 @@ fn update(
         if particle.time_to_collision > 0. {
             particle.time_to_collision -= time.delta_seconds();
         }
+        
+        let mut move_time = time.delta_seconds();
+
         // handle collision
-        else if particle.time_to_collision < 0. {
+        if particle.time_to_collision < 0. {
             particle.velocity = particle.rebound_dir;
+
+            // place particle exactly at collision point
+            particle.pos = particle.collision_pos;
+            transform.translation.x = particle.collision_pos.x;
+            transform.translation.y = particle.collision_pos.y;
+
+            // account for the wasted time
+            move_time -= particle.time_to_collision;
 
             // reset collision data
             particle.time_to_collision = 0.;
@@ -131,10 +147,9 @@ fn update(
             particle.rebound_dir = Vec2::ZERO;
         }
 
-
         let move_this_frame = Vec2::new(
-            particle.velocity.x * SPEED * time.delta_seconds(),
-            particle.velocity.y * SPEED * time.delta_seconds(),
+            particle.velocity.x * SPEED * move_time,
+            particle.velocity.y * SPEED * move_time,
         );
 
         transform.translation.x += move_this_frame.x;
