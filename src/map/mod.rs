@@ -50,15 +50,11 @@ fn build_obstacles(
     let color = Color::ORANGE;
 
     let pos = Vec3::new(SQUARE_LENGTH/2., SQUARE_LENGTH/2., 0.05);
-    let size = Vec3::new(SQUARE_LENGTH/50., SQUARE_LENGTH/10., len/4.);
+    let size = Vec3::new(SQUARE_LENGTH/50., SQUARE_LENGTH, len/4.);
     let rot: f32 = PI/6.;
 
     let v1 = Vec2::new(pos.x - size.y/2. * rot.sin(), pos.y - size.y/2. * rot.cos());
     let v2 = Vec2::new(pos.x + size.y/2. * rot.sin(), pos.y + size.y/2. * rot.cos());
-
-    println!("V1 {} V2 {}", v1, v2);
-
-    println!("Obstacle {} {}", pos, size);
 
     let normal_to_obstacle = cross_product(Vec3::new(v2.x-v1.x, v2.y-v1.y, 0.), Vec3::new(0., 0., 1.) - pos);
 
@@ -69,10 +65,23 @@ fn build_obstacles(
         Obstacle {v1, v2, normal: Vec2::new(normal_to_obstacle.x, normal_to_obstacle.y)},
         color, commands, meshes, materials
     );
-}
 
-fn divide_ints(a: i32, b: i32) -> f32 {
-    return a as f32 / b as f32;
+    let pos = Vec3::new(SQUARE_LENGTH/2. + 200., SQUARE_LENGTH/2.-100., 0.05);
+    let size = Vec3::new(SQUARE_LENGTH/50., SQUARE_LENGTH, len/4.);
+    let rot: f32 = PI/6.;
+
+    let v1 = Vec2::new(pos.x - size.y/2. * rot.sin(), pos.y - size.y/2. * rot.cos());
+    let v2 = Vec2::new(pos.x + size.y/2. * rot.sin(), pos.y + size.y/2. * rot.cos());
+
+    let normal_to_obstacle = cross_product(Vec3::new(v2.x-v1.x, v2.y-v1.y, 0.), Vec3::new(0., 0., 1.) - pos);
+
+    square::spawn(
+        pos,
+        size, 
+        -1.*rot,
+        Obstacle {v1, v2, normal: Vec2::new(normal_to_obstacle.x, normal_to_obstacle.y)},
+        color, commands, meshes, materials
+    );
 }
 
 fn cross_product(a: Vec3, b: Vec3) -> Vec3 {

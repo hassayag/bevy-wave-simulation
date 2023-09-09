@@ -31,7 +31,6 @@ fn mouse_input(
     
     if buttons.just_pressed(MouseButton::Left) {
         let pos = Vec3::new(mouse_pos.x, mouse_pos.y, 0.001);
-        println!("POSITION {}", pos);
         particle::spawn_wave(pos, Color::WHITE, &mut commands, &mut meshes, &mut materials);
     }
 }

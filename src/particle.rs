@@ -9,8 +9,8 @@ use crate::map::{self, Obstacle};
 
 const RADIUS: f32 = 2.5;
 const SPEED: f32 = 100.;
-const NUM_OF_PARTICLES: usize = 1;
-const LIFE_SECS: f32 = 3.;
+const NUM_OF_PARTICLES: usize = 5000;
+const LIFE_SECS: f32 = 10.;
 const COLLISSION_LIFE_LOSS_PERC: f32 = 0.5;
 const COLLISSION_SPEED_LOSS_PERC: f32 = 0.0;
 
@@ -27,8 +27,8 @@ struct Particle {
     pos: Vec2,
     velocity: Vec2,
     time_remaining: f32,
-    collision_pos: Vec2,
     time_to_collision: f32,
+    rebound_dir: Vec2,
     collision_checked: bool,
 }
 
@@ -64,8 +64,8 @@ fn spawn(
         pos: Vec2::new(pos.x, pos.y), 
         velocity, 
         time_remaining: LIFE_SECS, 
-        collision_pos: Vec2::ZERO, 
         time_to_collision: 0., 
+        rebound_dir: Vec2::ZERO,
         collision_checked: false
     }));
 }
@@ -78,11 +78,6 @@ fn update(
     time: Res<Time>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let mut obstacles: Vec<&Obstacle> = Vec::new();
-    for obstacle in query_obstacles.iter() {
-        obstacles.push(obstacle);
-    }
-
     for (
         mut particle, 
         mut transform, 
@@ -91,34 +86,51 @@ fn update(
     ) in query_particles.iter_mut() {       
         // find next collision
         if !particle.collision_checked {
-            let mut found_collision = false;
-            
-            match predict_collision_pos(&particle, &obstacles[0]) {
-                Some(pos) => {
-                    particle.collision_pos = pos;
-                    found_collision = true;
+            for obstacle in query_obstacles.iter() {
+                let mut found_collision = false;
+                let mut collision_pos = Vec2::ZERO;
+                
+                match predict_collision_pos(&particle, &obstacle) {
+                    Some(pos) => {
+                        collision_pos = pos;
+                        found_collision = true;
+                    }
+                    None => {}
                 }
-                None => {}
+
+                if found_collision  {
+                    let time_to_collision = ((collision_pos.x - particle.pos.x) / (SPEED * particle.velocity.x)).abs();
+                    if time_to_collision < particle.time_to_collision || particle.time_to_collision == 0. {
+                        particle.time_to_collision = time_to_collision;
+
+                        let mut normal_modifier = 1.;
+                        if particle.velocity.x < 0. {
+                            normal_modifier = -1.;
+                        }
+
+                        particle.rebound_dir = normal_modifier * obstacle.normal;
+                    }
+                }
             }
 
-            if found_collision {
-                particle.time_to_collision = (particle.collision_pos.x - particle.pos.x) / (SPEED * particle.velocity.x).abs();
-            }
+            particle.collision_checked = true;
         }
+        
 
         // check if we have collided
         if particle.time_to_collision > 0. {
             particle.time_to_collision -= time.delta_seconds();
-            println!("TIME TO COLLISION {}", particle.time_to_collision);
         }
+        // handle collision
         else if particle.time_to_collision < 0. {
-            particle.velocity = obstacles[0].normal;
-            println!("NORMAL {}", obstacles[0].normal);
-            // handle_collision(particle)
+            particle.velocity = particle.rebound_dir;
+
+            // reset collision data
+            particle.time_to_collision = 0.;
+            particle.collision_checked = false;
+            particle.rebound_dir = Vec2::ZERO;
         }
 
-
-        particle.collision_checked = true;
 
         let move_this_frame = Vec2::new(
             particle.velocity.x * SPEED * time.delta_seconds(),
@@ -127,6 +139,8 @@ fn update(
 
         transform.translation.x += move_this_frame.x;
         transform.translation.y += move_this_frame.y;
+        particle.pos.x = transform.translation.x;
+        particle.pos.y = transform.translation.y;
 
         // reduce opacity of particle each loop
         let new_material = materials.add(ColorMaterial::from(Color::Rgba { 
@@ -163,7 +177,7 @@ fn predict_collision_pos(particle: &Particle, obstacle: &Obstacle) -> Option<Vec
     let mut found_intersection = false;
 
     match intersection_option {
-        None => println!("Failed"),
+        None => {},
         Some(intersection) => {
             match intersection {
                 LineIntersection::SinglePoint { intersection, is_proper } => {
