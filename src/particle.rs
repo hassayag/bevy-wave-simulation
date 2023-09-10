@@ -1,15 +1,16 @@
 use std::f32::consts::TAU;
 
+use bevy::sprite::{Mesh2dHandle, Material2d};
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use geo_types::coord;
-use geo::{Line, Coord};
+use geo::Line;
 use geo::line_intersection::{line_intersection, LineIntersection};
 
-use crate::map::{self, Obstacle};
+use crate::map::Obstacle;
 
 const RADIUS: f32 = 2.5;
 const SPEED: f32 = 100.;
-const NUM_OF_PARTICLES: usize = 3000;
+const NUM_OF_PARTICLES: usize = 10000;
 const LIFE_SECS: f32 = 10.;
 const COLLISSION_LIFE_LOSS_PERC: f32 = 0.5;
 const COLLISSION_SPEED_LOSS_PERC: f32 = 0.0;
@@ -18,7 +19,9 @@ pub struct ParticlePlugin;
 
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update);
+        app
+            .add_systems(Startup, init)
+            .add_systems(Update, update);
     }
 }
 
@@ -33,66 +36,102 @@ struct Particle {
     collision_checked: bool,
 }
 
+#[derive(Resource)]
+pub struct ParticleMesh {
+    pub bundle: MaterialMesh2dBundle<ColorMaterial>,
+}
+
+#[derive(Resource)]
+struct State {
+    last_num_of_obstacles: usize
+}
+
+fn init(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>
+) {
+    commands.insert_resource(State{ last_num_of_obstacles: 0 });
+    commands.insert_resource(ParticleMesh {
+        bundle: MaterialMesh2dBundle {
+            mesh: meshes.add(shape::Circle::new(RADIUS).into()).into(),
+            material: materials.add(ColorMaterial::from(Color::WHITE)),
+            transform: Transform::from_translation(Vec3::ZERO),
+            ..default()
+        } 
+    })
+}
+
+
 pub fn spawn_wave(
     pos: Vec3,
-    color: Color,
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<ColorMaterial>>
+    bundle: &MaterialMesh2dBundle<ColorMaterial>,
 ) {
     for i in 0..NUM_OF_PARTICLES {
         let angle = i as f32 * TAU / NUM_OF_PARTICLES as f32;
         let velocity = Vec2::new(f32::cos(angle), f32::sin(angle));
-        spawn(pos, velocity, color, commands, meshes, materials);
+
+        commands.spawn((bundle.clone(), 
+            Particle { 
+                pos: Vec2::new(pos.x, pos.y), 
+                velocity, 
+                time_remaining: LIFE_SECS, 
+                time_to_collision: 0., 
+                collision_pos: Vec2::ZERO,
+                rebound_dir: Vec2::ZERO,
+                collision_checked: false
+            }));
     }
 }
 
-fn spawn(
-    pos: Vec3,
-    velocity: Vec2,
-    color: Color,
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-) {
-    commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(shape::Circle::new(RADIUS).into()).into(),
-            material: materials.add(ColorMaterial::from(color)),
-            transform: Transform::from_translation(Vec3::new(pos.x, pos.y, pos.z)),
-            ..default()
-    }, Particle{ 
-        pos: Vec2::new(pos.x, pos.y), 
-        velocity, 
-        time_remaining: LIFE_SECS, 
-        time_to_collision: 0., 
-        collision_pos: Vec2::ZERO,
-        rebound_dir: Vec2::ZERO,
-        collision_checked: false
-    }));
-}
+// fn spawn(
+//     pos: Vec3,
+//     velocity: Vec2,
+//     commands: &mut Commands,
+//     particle_mesh: &Res<ParticleMesh>,
+// ) {
+//     commands.spawn((particle_mesh.bundle, 
+//         Particle { 
+//             pos: Vec2::new(pos.x, pos.y), 
+//             velocity, 
+//             time_remaining: LIFE_SECS, 
+//             time_to_collision: 0., 
+//             collision_pos: Vec2::ZERO,
+//             rebound_dir: Vec2::ZERO,
+//             collision_checked: false
+//         }));
+// }
 
 
 fn update(
+    mut state: ResMut<State>,
     mut query_particles: Query<(&mut Particle, &mut Transform, &mut Handle<ColorMaterial>, Entity), With<Particle>>,
     query_obstacles: Query<&Obstacle>,
     mut commands: Commands,
     time: Res<Time>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
+    let mut num_of_obstacles = 0;
+    for obstacle in query_obstacles.iter() {
+        num_of_obstacles += 1;
+    }
+
     for (
         mut particle, 
         mut transform, 
         mut material, 
         entity
     ) in query_particles.iter_mut() {       
-        // find next collision
-        if !particle.collision_checked {
+        // find next collision if we have not checked
+        // OR if the number of obstacles has changed
+        if !particle.collision_checked || state.last_num_of_obstacles != num_of_obstacles {
+            state.last_num_of_obstacles = num_of_obstacles;
             for obstacle in query_obstacles.iter() {
                 let mut found_collision = false;
                 let mut collision_pos = Vec2::ZERO;
                 
-                match predict_collision_pos(&particle, &obstacle) {
+                match predict_collision_pos(&particle, obstacle) {
                     Some(pos) => {
                         collision_pos = pos;
                         found_collision = true;
@@ -107,8 +146,7 @@ fn update(
                     if time_to_collision < particle.time_to_collision || particle.time_to_collision == 0. {
                         particle.time_to_collision = time_to_collision;
 
-                        let mut normal_modifier = 1.;
-                        particle.rebound_dir = normal_modifier * obstacle.normal;
+                        particle.rebound_dir = obstacle.normal;
                         particle.collision_pos = collision_pos;
                     }
                 }

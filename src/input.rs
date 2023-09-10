@@ -1,5 +1,5 @@
 use bevy::{prelude::*, window::PrimaryWindow};
-use crate::{camera, particle, map};
+use crate::{camera, particle::{self, ParticleMesh}, map::{self}};
 
 pub struct InputPlugin;
 
@@ -30,6 +30,7 @@ fn mouse_input(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    particle_mesh: Res<ParticleMesh>,
 ) {
     let (camera, camera_transform) = camera_q.single();
 
@@ -42,10 +43,10 @@ fn mouse_input(
     } else {
         return;
     }
-    
+
     if buttons.just_pressed(MouseButton::Left) {
         let pos = Vec3::new(mouse_pos.x, mouse_pos.y, 0.001);
-        particle::spawn_wave(pos, Color::WHITE, &mut commands, &mut meshes, &mut materials);
+        particle::spawn_wave(pos, &mut commands, &particle_mesh.bundle);
     }
 
     if buttons.just_pressed(MouseButton::Right) && state.last_key_right_click {

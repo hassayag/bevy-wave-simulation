@@ -15,7 +15,7 @@ pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(Startup, init);
+            .add_systems(Update, update);
     }
 }
 
@@ -24,21 +24,24 @@ pub struct Dimension {
     pub y: f32
 }
 
-
-fn init(    
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    // build_obstacles(&mut commands, &mut meshes, &mut materials);
-}
-
 #[derive(Component)]
 pub struct Obstacle {
     // defines two ends of the 1-D obstacle
     pub v1: Vec2,
     pub v2: Vec2,
     pub normal: Vec2,
+}
+
+fn update(    
+    keys: Res<Input<KeyCode>>,
+    query_obstacles: Query<Entity, With<Obstacle>>,
+    mut commands: Commands,
+) {
+    if keys.just_pressed(KeyCode::R) {
+        for entity in query_obstacles.iter() {
+            commands.entity(entity).despawn();
+        }
+    }
 }
 
 pub fn create_obstacle(

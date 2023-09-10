@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin}};
 
 pub mod map;
 mod camera;
@@ -19,7 +19,9 @@ fn main() {
             map::MapPlugin, 
             camera::CameraPlugin, 
             input::InputPlugin,
-            particle::ParticlePlugin,  
+            particle::ParticlePlugin,
+            LogDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin::default(),  
         ))
         .run();
 }
