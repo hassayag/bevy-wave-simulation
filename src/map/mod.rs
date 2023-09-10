@@ -30,7 +30,7 @@ fn init(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    build_obstacles(&mut commands, &mut meshes, &mut materials);
+    // build_obstacles(&mut commands, &mut meshes, &mut materials);
 }
 
 #[derive(Component)]
@@ -47,23 +47,30 @@ pub fn create_obstacle(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>
 ) {
-    println!("v1 {v1} v2 {v2}");
     let color = Color::ORANGE;
 
     let dir = v2 - v1;
     let pos = v1 + dir/2.;
-    let size = Vec3::new(SQUARE_LENGTH/50., dir.length(), 0.1);
+    let pos3 = Vec3::new(pos.x,pos.y,0.);
+    let size = Vec3::new(SQUARE_LENGTH/100., dir.length(), 0.1);
     let rot: f32 = (dir.y/dir.x).atan() + PI/2.;
     
-    let normal_to_obstacle: Vec3 = cross_product(Vec3::new(v2.x-v1.x, v2.y-v1.y, 0.), Vec3::new(0., 0., 1.) - Vec3::new(pos.x, pos.y, 0.));
+    let normal_dir: Vec3 = cross_product(Vec3::new(v2.x-pos.x, v2.y-pos.y, 0.), Vec3::new(0.,0.,1.));
+    // let normal_dir: Vec3 = cross_product(Vec3::new(1.,0.,0.), Vec3::new(0.,1.,0.));
 
     square::spawn(
-        Vec3::new(pos.x, pos.y, 0.),
+        pos3,
         size, 
         rot,
-        Obstacle {v1, v2, normal: Vec2::new(normal_to_obstacle.x, normal_to_obstacle.y)},
+        Obstacle {v1, v2, normal: Vec2::new(normal_dir.x, normal_dir.y)},
         color, commands, meshes, materials
     );
+
+    // println!("NORMAL {normal_dir}");
+    // square::debug(Vec3::new(pos.x, pos.y, 0.5), commands, meshes, materials);
+    // square::debug(Vec3::new(v1.x, v1.y, 0.5), commands, meshes, materials);
+    // square::debug(Vec3::new(v2.x, v2.y, 0.5), commands, meshes, materials);
+    // square::debug(pos3 + 20.*normal_dir + Vec3::new(0.,0.,0.5), commands, meshes, materials);
 }
 
 fn build_obstacles(    
@@ -110,17 +117,9 @@ fn build_obstacles(
 }
 
 fn cross_product(a: Vec3, b: Vec3) -> Vec3 {
-    let c: [[f32; 3]; 3] = [[0., -a.z, a.y],
-                            [a.z, 0., -a.x], 
-                            [-a.y, a.x, 0.]];
-
-    let cross_prod =  Vec3::new(
-        c[0][0] * b.x + c[0][1] * b.x + c[0][2] * b.x,
-        c[1][0] * b.y + c[1][1] * b.y + c[1][2] * b.y,
-        c[2][0] * b.z + c[2][1] * b.z + c[2][2] * b.z,
-    );
- 
-    let normalised_cross_prod = cross_prod / (cross_prod.x.powi(2) + cross_prod.y.powi(2) + cross_prod.z.powi(2)).sqrt();
-
-    return normalised_cross_prod;
+    return Vec3 {
+        x: a.y * b.z - a.z * b.y,
+        y: a.z * b.x - a.x * b.z,
+        z: a.x * b.y - a.y * b.x,
+    }.normalize()
 }

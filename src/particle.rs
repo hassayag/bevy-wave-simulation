@@ -108,10 +108,6 @@ fn update(
                         particle.time_to_collision = time_to_collision;
 
                         let mut normal_modifier = 1.;
-                        if particle.velocity.x < 0. {
-                            normal_modifier = -1.;
-                        }
-
                         particle.rebound_dir = normal_modifier * obstacle.normal;
                         particle.collision_pos = collision_pos;
                     }
@@ -131,7 +127,7 @@ fn update(
 
         // handle collision
         if particle.time_to_collision < 0. {
-            particle.velocity = particle.rebound_dir;
+            particle.velocity = reflect_about_normal(particle.velocity, particle.rebound_dir);
 
             // place particle exactly at collision point
             particle.pos = particle.collision_pos;
@@ -214,4 +210,8 @@ fn predict_collision_pos(particle: &Particle, obstacle: &Obstacle) -> Option<Vec
     else {
         None
     }
+}
+
+fn reflect_about_normal(d: Vec2, n: Vec2) -> Vec2 {
+    return d - 2. * (d.dot(n)) * n;
 }

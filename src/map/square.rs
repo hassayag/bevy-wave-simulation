@@ -28,3 +28,24 @@ pub fn spawn<T>(
             ..default()
     }, component));
 }
+
+
+pub fn debug(
+    pos: Vec3,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) 
+{
+    commands.spawn((
+        MaterialMesh2dBundle {
+            mesh: meshes.add(shape::Circle::new(3.).into()).into(),
+            material: materials.add(ColorMaterial::from(Color::RED)),
+            transform: Transform {
+                translation: Vec3::new(pos.x, pos.y, pos.z),
+                rotation: Quat::from_rotation_z(0.),
+                scale: Vec3::new(1.,1.,1.)
+            },
+            ..default()
+    }));
+}
