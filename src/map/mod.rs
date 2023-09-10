@@ -41,6 +41,31 @@ pub struct Obstacle {
     pub normal: Vec2,
 }
 
+pub fn create_obstacle(
+    v1: Vec2, v2: Vec2,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>
+) {
+    println!("v1 {v1} v2 {v2}");
+    let color = Color::ORANGE;
+
+    let dir = v2 - v1;
+    let pos = v1 + dir/2.;
+    let size = Vec3::new(SQUARE_LENGTH/50., dir.length(), 0.1);
+    let rot: f32 = (dir.y/dir.x).atan() + PI/2.;
+    
+    let normal_to_obstacle: Vec3 = cross_product(Vec3::new(v2.x-v1.x, v2.y-v1.y, 0.), Vec3::new(0., 0., 1.) - Vec3::new(pos.x, pos.y, 0.));
+
+    square::spawn(
+        Vec3::new(pos.x, pos.y, 0.),
+        size, 
+        rot,
+        Obstacle {v1, v2, normal: Vec2::new(normal_to_obstacle.x, normal_to_obstacle.y)},
+        color, commands, meshes, materials
+    );
+}
+
 fn build_obstacles(    
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
