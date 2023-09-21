@@ -10,10 +10,11 @@ use crate::map::Obstacle;
 
 const RADIUS: f32 = 2.5;
 const SPEED: f32 = 100.;
-const NUM_OF_PARTICLES: usize = 10000;
+const NUM_OF_PARTICLES: usize = 1000;
 const LIFE_SECS: f32 = 10.;
 const COLLISSION_LIFE_LOSS_PERC: f32 = 0.5;
-const COLLISSION_SPEED_LOSS_PERC: f32 = 0.0;
+const COLLISSION_SPEED_LOSS_PERC: f32 = 0.2;
+const OFFSET_ANGLE: f32 = 0.;
 
 pub struct ParticlePlugin;
 
@@ -69,10 +70,13 @@ pub fn spawn_wave(
     bundle: &MaterialMesh2dBundle<ColorMaterial>,
 ) {
     for i in 0..NUM_OF_PARTICLES {
-        let angle = i as f32 * TAU / NUM_OF_PARTICLES as f32;
+        let mut angle = i as f32 * TAU / NUM_OF_PARTICLES as f32;
+        angle += OFFSET_ANGLE;
         let velocity = Vec2::new(f32::cos(angle), f32::sin(angle));
 
-        commands.spawn((bundle.clone(), 
+        let mut particle_bundle = bundle.clone();
+        particle_bundle.transform.translation = pos;
+        commands.spawn((particle_bundle, 
             Particle { 
                 pos: Vec2::new(pos.x, pos.y), 
                 velocity, 
@@ -140,7 +144,14 @@ fn update(
                 }
 
                 if found_collision  {
-                    let time_to_collision = ((collision_pos.x - particle.pos.x) / (SPEED * particle.velocity.x)).abs();
+                    let mut time_to_collision: f32 = 0.;
+                    let x_vel_near_zero = (particle.velocity.x * 10000.).round() == 0.;
+                    if x_vel_near_zero {
+                        time_to_collision = ((collision_pos.y - particle.pos.y) / (SPEED * particle.velocity.y)).abs();
+                    }
+                    else {
+                        time_to_collision = ((collision_pos.x - particle.pos.x) / (SPEED * particle.velocity.x)).abs();
+                    }
                     
                     // find minimum time_to_collision
                     if time_to_collision < particle.time_to_collision || particle.time_to_collision == 0. {
@@ -171,6 +182,9 @@ fn update(
             particle.pos = particle.collision_pos;
             transform.translation.x = particle.collision_pos.x;
             transform.translation.y = particle.collision_pos.y;
+
+            particle.time_remaining = particle.time_remaining * (1. - COLLISSION_LIFE_LOSS_PERC);
+            particle.velocity = particle.velocity * (1. - COLLISSION_SPEED_LOSS_PERC);
 
             // account for the wasted time
             move_time -= particle.time_to_collision;
@@ -205,6 +219,10 @@ fn update(
         if particle.time_remaining < 0. {
             commands.entity(entity).despawn();
         }
+
+        // if particle.time_to_collision > 0. {
+        //     println!("COLLISION IN {}s", particle.time_to_collision)
+        // }
     }
 }
 
@@ -232,11 +250,13 @@ fn predict_collision_pos(particle: &Particle, obstacle: &Obstacle) -> Option<Vec
                 LineIntersection::SinglePoint { intersection, is_proper } => {
                     single_point = Vec2::new(intersection.x, intersection.y);
                     found_intersection = true;
+                    // println!("Single point Intersection: {:?}", intersection);
+
                 }
         
                 LineIntersection::Collinear { intersection } => {
                     // Handle the Collinear variant here if needed
-                    println!("Collinear Intersection: {:?}", intersection);
+                    // println!("Collinear Intersection: {:?}", intersection);
                 }
             }        
         }

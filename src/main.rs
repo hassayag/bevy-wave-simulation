@@ -20,8 +20,8 @@ fn main() {
             camera::CameraPlugin, 
             input::InputPlugin,
             particle::ParticlePlugin,
-            LogDiagnosticsPlugin::default(),
-            FrameTimeDiagnosticsPlugin::default(),  
+            // LogDiagnosticsPlugin::default(),
+            // FrameTimeDiagnosticsPlugin::default(),  
         ))
         .run();
 }
