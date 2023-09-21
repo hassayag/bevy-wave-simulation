@@ -37,7 +37,7 @@ pub fn debug(
     materials: &mut ResMut<Assets<ColorMaterial>>,
 ) 
 {
-    commands.spawn((
+    commands.spawn(
         MaterialMesh2dBundle {
             mesh: meshes.add(shape::Circle::new(3.).into()).into(),
             material: materials.add(ColorMaterial::from(Color::RED)),
@@ -47,5 +47,5 @@ pub fn debug(
                 scale: Vec3::new(1.,1.,1.)
             },
             ..default()
-    }));
+    });
 }

@@ -1,6 +1,5 @@
 use std::f32::consts::TAU;
 
-use bevy::sprite::{Mesh2dHandle, Material2d};
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use geo_types::coord;
 use geo::Line;
@@ -89,25 +88,6 @@ pub fn spawn_wave(
     }
 }
 
-// fn spawn(
-//     pos: Vec3,
-//     velocity: Vec2,
-//     commands: &mut Commands,
-//     particle_mesh: &Res<ParticleMesh>,
-// ) {
-//     commands.spawn((particle_mesh.bundle, 
-//         Particle { 
-//             pos: Vec2::new(pos.x, pos.y), 
-//             velocity, 
-//             time_remaining: LIFE_SECS, 
-//             time_to_collision: 0., 
-//             collision_pos: Vec2::ZERO,
-//             rebound_dir: Vec2::ZERO,
-//             collision_checked: false
-//         }));
-// }
-
-
 fn update(
     mut state: ResMut<State>,
     mut query_particles: Query<(&mut Particle, &mut Transform, &mut Handle<ColorMaterial>, Entity), With<Particle>>,
@@ -117,7 +97,7 @@ fn update(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mut num_of_obstacles = 0;
-    for obstacle in query_obstacles.iter() {
+    for _ in query_obstacles.iter() {
         num_of_obstacles += 1;
     }
 
